@@ -1,0 +1,7 @@
+"0",""
+"0","boxplot("
+"0","  oat$yield,"
+"0","  main = ""Boxplot of Oat Yield"","
+"0","  ylab = ""Yield (t/ha)"","
+"0","  col = ""palegreen"""
+"0",")"

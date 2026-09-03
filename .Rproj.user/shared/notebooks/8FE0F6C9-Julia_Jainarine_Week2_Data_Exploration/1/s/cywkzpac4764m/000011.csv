@@ -1,0 +1,6 @@
+"0",""
+"0","abline("
+"0","  lm(yield ~ grain, data = oat_diagnostic),"
+"0","  col = ""black"","
+"0","  lwd = 2"
+"0",")"

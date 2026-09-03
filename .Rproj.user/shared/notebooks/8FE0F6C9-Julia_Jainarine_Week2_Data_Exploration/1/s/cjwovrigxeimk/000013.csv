@@ -1,0 +1,6 @@
+"0",""
+"0","knitr::kable("
+"0","  as.data.frame(combined_table),"
+"0","  col.names = c(""Species"", ""Diagnosis"", ""Count""),"
+"0","  caption = ""Observations in each species-by-diagnosis group"""
+"0",")"

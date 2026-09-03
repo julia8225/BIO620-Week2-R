@@ -1,0 +1,426 @@
+---
+title: "BIO 620 Week 2 Data Exploration"
+author: "Julia Jainarine"
+date: "08/30/2026"
+output:
+  word_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 7,
+  fig.height = 5,
+  dpi = 300
+)
+```
+
+# Purpose
+
+This report presents an initial data exploration of the oat and bacteria datasets. The analysis identifies the variables and experimental structure, checks data quality, summarizes distributions, and explores patterns visually. Because this is exploratory analysis, the figures identify possible patterns and problems rather than provide final statistical conclusions.
+
+# Oat dataset
+
+## Research hypothesis
+
+Plots with a greater mean number of grains per ear are expected to have greater oat yield. Therefore, grain number should positively predict yield.
+
+## Variables and roles
+
+- `yield` is the response variable. It is a continuous numerical variable measured in tonnes per hectare.
+- `grain` is the focal predictor. Although individual grains are counts, this column contains a mean with decimal values and is treated as a continuous numerical variable.
+- There are no categorical variables, ordinal variables, or additional covariates in this dataset.
+
+## Import and inspect the data
+
+```{r oat-import}
+oat <- read.csv("oat.csv", header = TRUE)
+
+names(oat)
+str(oat)
+head(oat)
+summary(oat)
+sum(is.na(oat))
+```
+
+The oat dataset contains 20 observations and two variables. There are no missing values.
+
+## Check for possible data errors
+
+```{r oat-quality}
+which(oat$grain > 100)
+oat[oat$grain > 100, ]
+```
+
+Row 16 contains a grain value of 2528, while every other observation ranges from 17.76 to 28.94. This is an extreme outlier and may be a data-entry or decimal-place error, possibly 25.28. It should be checked against the original source before it is corrected or removed. The supplied value is retained in the analysis below.
+
+## Numerical summaries
+
+```{r oat-summary}
+oat_summary <- data.frame(
+  Variable = c("grain", "yield"),
+  N = c(length(oat$grain), length(oat$yield)),
+  Mean = c(mean(oat$grain), mean(oat$yield)),
+  SD = c(sd(oat$grain), sd(oat$yield)),
+  Minimum = c(min(oat$grain), min(oat$yield)),
+  Median = c(median(oat$grain), median(oat$yield)),
+  Maximum = c(max(oat$grain), max(oat$yield))
+)
+
+knitr::kable(
+  oat_summary,
+  digits = 3,
+  caption = "Numerical summaries for the raw oat data"
+)
+```
+
+The mean and standard deviation of `grain` are severely affected by the value 2528. Therefore, the median and graphs are more informative until that observation is verified.
+
+## Dot charts and boxplots
+
+```{r oat-distributions, fig.height=7}
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+
+dotchart(
+  oat$grain,
+  main = "Dot Chart of Mean Grains per Ear",
+  xlab = "Mean grains per ear",
+  pch = 19,
+  color = "steelblue"
+)
+
+boxplot(
+  oat$grain,
+  main = "Boxplot of Mean Grains per Ear",
+  ylab = "Mean grains per ear",
+  col = "lightblue"
+)
+
+dotchart(
+  oat$yield,
+  main = "Dot Chart of Oat Yield",
+  xlab = "Yield (t/ha)",
+  pch = 19,
+  color = "darkgreen"
+)
+
+boxplot(
+  oat$yield,
+  main = "Boxplot of Oat Yield",
+  ylab = "Yield (t/ha)",
+  col = "palegreen"
+)
+
+par(mfrow = c(1, 1))
+```
+
+## Histograms
+
+```{r oat-histograms, fig.height=4}
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+
+hist(
+  oat$grain,
+  main = "Histogram of Mean Grains per Ear",
+  xlab = "Mean grains per ear",
+  col = "lightblue",
+  border = "white"
+)
+
+hist(
+  oat$yield,
+  main = "Histogram of Oat Yield",
+  xlab = "Yield (t/ha)",
+  col = "palegreen",
+  border = "white"
+)
+
+par(mfrow = c(1, 1))
+```
+
+Yield ranges from 4.913 to 5.858 tonnes per hectare and does not contain an observation as extreme as the grain value in row 16. The grain graphs clearly isolate the value 2528 from all the other measurements.
+
+## Relationship between grain number and yield
+
+```{r oat-scatter-raw}
+plot(
+  oat$grain,
+  oat$yield,
+  main = "Oat Yield versus Mean Grains per Ear: Raw Data",
+  xlab = "Mean grains per ear",
+  ylab = "Yield (t/ha)",
+  pch = 19,
+  col = "steelblue"
+)
+
+text(
+  oat$grain[16],
+  oat$yield[16],
+  labels = "Row 16",
+  pos = 3
+)
+```
+
+The raw scatterplot is compressed by row 16, making the relationship among the other observations difficult to see.
+
+```{r oat-correlation-raw}
+cor(oat$grain, oat$yield)
+```
+
+The raw Pearson correlation is approximately 0.034. However, this result is strongly affected by the questionable grain value.
+
+## Diagnostic graph
+
+The following graph excludes grain values above 100 only to reveal the pattern among the remaining observations. It does not permanently remove or correct row 16.
+
+```{r oat-scatter-diagnostic}
+oat_diagnostic <- oat[oat$grain < 100, ]
+
+plot(
+  oat_diagnostic$grain,
+  oat_diagnostic$yield,
+  main = "Diagnostic View Excluding Unverified Row 16",
+  xlab = "Mean grains per ear",
+  ylab = "Yield (t/ha)",
+  pch = 19,
+  col = "darkgreen"
+)
+
+abline(
+  lm(yield ~ grain, data = oat_diagnostic),
+  col = "black",
+  lwd = 2
+)
+
+cor(oat_diagnostic$grain, oat_diagnostic$yield)
+```
+
+The remaining 19 observations show a clear positive and approximately linear relationship. Their correlation is approximately 0.859. This supports the proposed positive association, but row 16 must be verified before formal statistical analysis or a final biological conclusion.
+
+# Bacteria dataset
+
+## Research hypotheses
+
+The amount of toxin may differ among bacterial species, among patient diagnoses, or through an interaction between species and diagnosis. A potentially useful indicator would be a bacterial species whose toxin measurements distinguish carcinoma diagnoses from non-carcinoma diagnoses.
+
+## Variables and roles
+
+- `toxin` is the response variable. It is a continuous numerical measurement in units per microliter.
+- `species` is a categorical nominal predictor with four levels: bacterA, bacterB, bacterC, and bacterD.
+- `diagnosis` is a categorical nominal predictor with four levels.
+- There are no ordinal variables or additional covariates.
+- The spellings `apendicitis` and `skin.absces` are retained because those are the labels used in the supplied dataset.
+
+## Import and inspect the data
+
+```{r bacteria-import}
+bacteria <- read.csv("bacteria.csv", header = TRUE)
+
+bacteria$species <- as.factor(bacteria$species)
+bacteria$diagnosis <- as.factor(bacteria$diagnosis)
+
+names(bacteria)
+str(bacteria)
+head(bacteria)
+summary(bacteria)
+sum(is.na(bacteria))
+```
+
+The bacteria dataset contains 80 observations and three variables. There are no missing values.
+
+## Tables for the categorical variables
+
+```{r bacteria-tables}
+species_table <- table(bacteria$species)
+diagnosis_table <- table(bacteria$diagnosis)
+combined_table <- table(bacteria$species, bacteria$diagnosis)
+
+knitr::kable(
+  as.data.frame(species_table),
+  col.names = c("Species", "Count"),
+  caption = "Observations by bacterial species"
+)
+
+knitr::kable(
+  as.data.frame(diagnosis_table),
+  col.names = c("Diagnosis", "Count"),
+  caption = "Observations by diagnosis"
+)
+
+knitr::kable(
+  as.data.frame(combined_table),
+  col.names = c("Species", "Diagnosis", "Count"),
+  caption = "Observations in each species-by-diagnosis group"
+)
+```
+
+There are 20 observations for each species and 20 observations for each diagnosis. Every species-by-diagnosis combination contains five observations, so the study design is balanced.
+
+## Numerical summaries
+
+```{r bacteria-summaries}
+group_summary <- function(values, groups) {
+  pieces <- split(values, groups)
+
+  data.frame(
+    Group = names(pieces),
+    N = sapply(pieces, length),
+    Mean = sapply(pieces, mean),
+    SD = sapply(pieces, sd),
+    Minimum = sapply(pieces, min),
+    Median = sapply(pieces, median),
+    Maximum = sapply(pieces, max),
+    row.names = NULL
+  )
+}
+
+species_summary <- group_summary(
+  bacteria$toxin,
+  bacteria$species
+)
+
+diagnosis_summary <- group_summary(
+  bacteria$toxin,
+  bacteria$diagnosis
+)
+
+knitr::kable(
+  species_summary,
+  digits = 3,
+  caption = "Toxin summaries by bacterial species"
+)
+
+knitr::kable(
+  diagnosis_summary,
+  digits = 3,
+  caption = "Toxin summaries by diagnosis"
+)
+```
+
+Mean toxin levels are approximately 1.519 for bacterA, 1.261 for bacterB, 1.274 for bacterC, and 1.533 for bacterD.
+
+By diagnosis, mean toxin levels are approximately 1.656 for carc.intestine, 1.658 for carc.rectum, 1.172 for apendicitis, and 1.101 for skin.absces.
+
+## Overall toxin distribution
+
+```{r bacteria-overall, fig.height=4}
+par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+
+dotchart(
+  bacteria$toxin,
+  main = "Dot Chart of Toxin",
+  xlab = "Toxin (units/microliter)",
+  pch = 19,
+  color = "steelblue"
+)
+
+hist(
+  bacteria$toxin,
+  main = "Histogram of Toxin",
+  xlab = "Toxin (units/microliter)",
+  col = "lightblue",
+  border = "white"
+)
+
+par(mfrow = c(1, 1))
+```
+
+The toxin measurements range from 0.886 to 2.159 units per microliter. The overall shape reflects a mixture of lower-toxin and higher-toxin diagnosis groups rather than one uniform population.
+
+## Toxin by bacterial species
+
+```{r bacteria-by-species, fig.height=4}
+par(mfrow = c(1, 2), mar = c(6, 4, 3, 1))
+
+stripchart(
+  toxin ~ species,
+  data = bacteria,
+  vertical = TRUE,
+  method = "jitter",
+  pch = 19,
+  col = c("red", "blue", "darkgreen", "purple"),
+  main = "Toxin by Bacterial Species",
+  xlab = "Species",
+  ylab = "Toxin (units/microliter)"
+)
+
+boxplot(
+  toxin ~ species,
+  data = bacteria,
+  col = c("mistyrose", "lightblue", "palegreen", "plum"),
+  main = "Toxin by Bacterial Species",
+  xlab = "Species",
+  ylab = "Toxin (units/microliter)"
+)
+
+par(mfrow = c(1, 1))
+```
+
+BacterA and bacterD have higher overall means and greater variation than bacterB and bacterC. However, these graphs combine all diagnoses, so diagnosis must also be examined before interpreting the pattern.
+
+## Toxin by diagnosis
+
+```{r bacteria-by-diagnosis, fig.height=5}
+par(mfrow = c(1, 2), mar = c(9, 4, 3, 1))
+
+stripchart(
+  toxin ~ diagnosis,
+  data = bacteria,
+  vertical = TRUE,
+  method = "jitter",
+  pch = 19,
+  col = c("darkgreen", "red", "red", "blue"),
+  las = 2,
+  main = "Toxin by Diagnosis",
+  xlab = "Diagnosis",
+  ylab = "Toxin (units/microliter)"
+)
+
+boxplot(
+  toxin ~ diagnosis,
+  data = bacteria,
+  col = c("palegreen", "mistyrose", "mistyrose", "lightblue"),
+  las = 2,
+  main = "Toxin by Diagnosis",
+  xlab = "Diagnosis",
+  ylab = "Toxin (units/microliter)"
+)
+
+par(mfrow = c(1, 1))
+```
+
+Both carcinoma groups show noticeably higher toxin measurements than the apendicitis and skin.absces groups. The two carcinoma groups have very similar overall means, while skin.absces has the lowest mean.
+
+## Species-by-diagnosis pattern
+
+```{r bacteria-interaction}
+interaction.plot(
+  x.factor = bacteria$diagnosis,
+  trace.factor = bacteria$species,
+  response = bacteria$toxin,
+  fun = mean,
+  type = "b",
+  pch = c(16, 17, 15, 18),
+  col = c("red", "blue", "darkgreen", "purple"),
+  fixed = TRUE,
+  xlab = "Diagnosis",
+  ylab = "Mean toxin (units/microliter)",
+  trace.label = "Species",
+  main = "Mean Toxin by Species and Diagnosis"
+)
+```
+
+There is only one numerical variable in this dataset, so a scatterplot between two numerical variables is not applicable. The interaction plot is more appropriate because it displays mean toxin across both categorical predictors.
+
+The exploratory pattern suggests that bacterA and bacterD produce particularly high toxin measurements in the carcinoma groups, while all four species are more similar in the non-carcinoma groups. This may indicate an interaction between bacterial species and diagnosis. No individual observation appears severely isolated from the rest of its relevant group, although formal statistical testing and model diagnostics would be required later.
+
+# Overall conclusions
+
+The oat exploration identified a probable data-quality problem in row 16. A positive relationship between grain number and yield is visible among the other observations, but the questionable value must be verified before modeling.
+
+The bacteria experiment is balanced and displays clear visual separation between carcinoma and non-carcinoma diagnoses. BacterA and bacterD appear to have the largest toxin increases within the carcinoma groups, making them possible candidates for further investigation as biological indicators.
+
+These observations are exploratory and should be followed by appropriate statistical modeling before firm biological conclusions are made.

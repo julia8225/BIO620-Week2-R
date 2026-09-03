@@ -1,0 +1,7 @@
+"0",""
+"0","boxplot("
+"0","  oat$grain,"
+"0","  main = ""Boxplot of Mean Grains per Ear"","
+"0","  ylab = ""Mean grains per ear"","
+"0","  col = ""lightblue"""
+"0",")"

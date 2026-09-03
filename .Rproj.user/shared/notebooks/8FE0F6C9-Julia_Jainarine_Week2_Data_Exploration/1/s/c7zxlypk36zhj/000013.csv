@@ -1,0 +1,8 @@
+"0",""
+"0","dotchart("
+"0","  oat$yield,"
+"0","  main = ""Dot Chart of Oat Yield"","
+"0","  xlab = ""Yield (t/ha)"","
+"0","  pch = 19,"
+"0","  color = ""darkgreen"""
+"0",")"
